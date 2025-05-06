@@ -18,6 +18,8 @@ public class FormMahasiswa extends javax.swing.JFrame {
         conn = Koneksi.getConnection();
         
         getData();
+        nonAktifButton();
+        aktifButton();
     }
     
     private void getData() {
@@ -87,14 +89,32 @@ public class FormMahasiswa extends javax.swing.JFrame {
         ));
         tbl_data.setGridColor(new java.awt.Color(204, 204, 204));
         tbl_data.setRowHeight(30);
+        tbl_data.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tbl_dataMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tbl_data);
 
         jLabel1.setText("Nama");
 
         t_cari.setText("Pencarian");
+        t_cari.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                t_cariMouseClicked(evt);
+            }
+        });
         t_cari.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 t_cariActionPerformed(evt);
+            }
+        });
+        t_cari.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                t_cariKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                t_cariKeyTyped(evt);
             }
         });
 
@@ -109,8 +129,18 @@ public class FormMahasiswa extends javax.swing.JFrame {
         });
 
         btn_batal.setText("Batal");
+        btn_batal.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_batalActionPerformed(evt);
+            }
+        });
 
         btn_perbarui.setText("Perbarui");
+        btn_perbarui.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_perbaruiActionPerformed(evt);
+            }
+        });
 
         btn_tambah.setText("Tambah");
         btn_tambah.addActionListener(new java.awt.event.ActionListener() {
@@ -120,6 +150,11 @@ public class FormMahasiswa extends javax.swing.JFrame {
         });
 
         btn_hapus.setText("Hapus");
+        btn_hapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_hapusActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -222,6 +257,141 @@ public class FormMahasiswa extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_tambahActionPerformed
 
+    private void tbl_dataMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbl_dataMouseClicked
+        int selectedRow = tbl_data.getSelectedRow();
+        if(selectedRow != -1) {
+            String nama = tbl_data.getValueAt(selectedRow, 1).toString();
+            String telepon = tbl_data.getValueAt(selectedRow, 2).toString();
+            String alamat = tbl_data.getValueAt(selectedRow, 3    ).toString();
+            
+            t_nama.setText(nama);
+            t_telepon.setText(telepon);
+            t_alamat.setText(alamat);
+        }
+        
+        btn_perbarui.setEnabled(true);
+        btn_tambah.setEnabled(false);
+        btn_hapus.setEnabled(true);
+    }//GEN-LAST:event_tbl_dataMouseClicked
+
+    private void btn_perbaruiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_perbaruiActionPerformed
+        int selectedRow = tbl_data.getSelectedRow();
+        if(selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih baris yang akan di perbarui");
+            return;
+        } 
+        
+        String id = tbl_data.getValueAt(selectedRow, 0).toString();
+        String nama = t_nama.getText();
+        String telepon = t_telepon.getText();
+        String alamat = t_alamat.getText();
+
+        if(nama.isEmpty() || telepon.isEmpty() || alamat.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Semua kolom harus diisi!", "Validasi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            String sql = "UPDATE mahasiswa SET nama=?, telepon=?, alamat=? WHERE id=?";
+            PreparedStatement st = conn.prepareStatement(sql);
+            st.setString(1, nama);
+            st.setString(2, telepon);
+            st.setString(3, alamat);
+            st.setString(4, id);
+            
+            int rowUpdated = st.executeUpdate();
+            if (rowUpdated > 0) {
+                JOptionPane.showMessageDialog(this, "Data berhasil diperbarui");   
+                resetForm();
+                getData();
+            }
+            
+            st.close();
+        } catch (Exception e) {
+            Logger.getLogger(FormMahasiswa.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }//GEN-LAST:event_btn_perbaruiActionPerformed
+
+    private void btn_batalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_batalActionPerformed
+        resetForm();
+        aktifButton();
+        btn_hapus.setEnabled(false);
+    }//GEN-LAST:event_btn_batalActionPerformed
+
+    private void btn_hapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_hapusActionPerformed
+        int selectedRow = tbl_data.getSelectedRow();
+        if(selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih baris yang akan di hapus");
+        }
+        
+        int confirm = JOptionPane.showConfirmDialog(this, "Apakah anda yakin ingin menghapus data ini?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        
+        if(confirm == JOptionPane.YES_OPTION) {
+            String id = tbl_data.getValueAt(selectedRow, 0).toString();
+            
+             try {
+                String sql = "DELETE FROM mahasiswa WHERE id=?";
+                PreparedStatement st = conn.prepareStatement(sql);
+                st.setString(1, id);
+                
+                int rowDelete = st.executeUpdate();
+                if(rowDelete > 0) {
+                    JOptionPane.showMessageDialog(this, "Data berhasil di hapus");
+                }
+                
+                st.close();
+            } catch (Exception e) {
+                Logger.getLogger(FormMahasiswa.class.getName()).log(Level.SEVERE, null, e);
+            }
+             
+            resetForm();
+            getData();
+            aktifButton();
+            nonAktifButton();   
+        }
+        
+       
+    }//GEN-LAST:event_btn_hapusActionPerformed
+
+    private void t_cariKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_t_cariKeyTyped
+        DefaultTableModel model = (DefaultTableModel) tbl_data.getModel();
+        model.setRowCount(0);
+        
+        String cari = t_cari.getText();
+        try {
+            String sql = "SELECT * FROM mahasiswa WHERE nama LIKE ? OR telepon LIKE ? OR alamat LIKE ?";
+            PreparedStatement st = conn.prepareStatement(sql);
+            st.setString(1, "%" + cari + "%");
+            st.setString(2, "%" + cari + "%");
+            st.setString(3, "%" + cari + "%");
+            
+            ResultSet rs = st.executeQuery();
+            
+            while(rs.next()) {
+                int id = rs.getInt("id");
+                String nama = rs.getString("nama");
+                String telepon = rs.getString("telepon");
+                String alamat = rs.getString("alamat");
+
+                Object[] rowData = {id, nama, telepon, alamat};   
+                model.addRow(rowData);
+            }
+            
+            rs.close();
+            st.close();
+        } catch (Exception e) {
+            Logger.getLogger(FormMahasiswa.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }//GEN-LAST:event_t_cariKeyTyped
+
+    private void t_cariMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_t_cariMouseClicked
+        t_cari.setText("");
+    }//GEN-LAST:event_t_cariMouseClicked
+
+    private void t_cariKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_t_cariKeyPressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_t_cariKeyPressed
+
     /**
      * @param args the command line arguments
      */
@@ -277,5 +447,16 @@ public class FormMahasiswa extends javax.swing.JFrame {
         t_nama.setText("");
         t_telepon.setText("");
         t_alamat.setText("");
+    }
+
+    private void nonAktifButton() {
+        btn_perbarui.setEnabled(false);
+        btn_hapus.setEnabled(false);
+    }
+
+    private void aktifButton() {
+        btn_tambah.setEnabled(true);
+        btn_perbarui.setEnabled(false);
+        
     }
 }
